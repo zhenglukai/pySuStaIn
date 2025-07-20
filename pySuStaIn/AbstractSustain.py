@@ -522,7 +522,7 @@ class AbstractSustain(ABC):
                 fig.savefig(plot_fname, bbox_inches='tight')
                 fig.show()
 
-        return samples_sequence_cval, samples_f_cval, kendalls_tau_mat, f_mat
+        return samples_sequence_cval, samples_f_cval
 
     def subtype_and_stage_individuals(self, sustainData, samples_sequence, samples_f, N_samples):
         # Subtype and stage a set of subjects. Useful for subtyping/staging subjects that were not used to build the model
