@@ -369,12 +369,12 @@ class AbstractSustain(ABC):
 
                     if ml_subtype_full[s] is not None:
                         N_samples = min(samples_sequence.shape[2], 1000)
-                        ml_subtype_test, _, _, _, _, _, _ = self.subtype_and_stage_individuals(
-                            sustainData_test, samples_sequence, samples_f, N_samples
-                        )
-                        ari_matrix[fold, s] = adjusted_rand_score(
-                            ml_subtype_full[s][indx_test].ravel(), ml_subtype_test.ravel()
-                        )
+                    ml_subtype_test, _, _, _, _, _, _ = self.subtype_and_stage_individuals(
+                        sustainData_test, samples_sequence, samples_f, N_samples
+                    )
+                    ari_matrix[fold, s] = adjusted_rand_score(
+                        ml_subtype_full[s][indx_test].ravel(), ml_subtype_test.ravel()
+                    )
 
         if not is_full:
             print("Cannot calculate CVIC, loglike_matrix and ARI without all folds. Rerun cross_validate_sustain_model after all folds calculated.")
