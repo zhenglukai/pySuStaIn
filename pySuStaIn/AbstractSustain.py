@@ -254,6 +254,10 @@ class AbstractSustain(ABC):
         #   'test_idxs'     - list of test set indices for each fold
         #   'select_fold'   - allows user to just run for a single fold (allows the cross-validation to be run in parallel).
         #                     leave this variable empty to iterate across folds sequentially.
+        # Returns:
+        #   CVIC            - cross-validation information criterion for each subtype model
+        #   loglike_matrix  - out-of-sample log-likelihoods for each fold and subtype
+        #   ari_matrix      - Adjusted Rand Index comparing cross-validated and full-model subtype assignments
 
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
@@ -365,16 +369,18 @@ class AbstractSustain(ABC):
                     pickle_file.close()
 
                 if is_full:
-                    loglike_matrix[fold, s]         = np.mean(np.sum(np.log(samples_likelihood_subj_test + 1e-250),axis=0))
+                    loglike_matrix[fold, s] = np.mean(
+                        np.sum(np.log(samples_likelihood_subj_test + 1e-250), axis=0)
+                    )
 
                     if ml_subtype_full[s] is not None:
                         N_samples = min(samples_sequence.shape[2], 1000)
-                    ml_subtype_test, _, _, _, _, _, _ = self.subtype_and_stage_individuals(
-                        sustainData_test, samples_sequence, samples_f, N_samples
-                    )
-                    ari_matrix[fold, s] = adjusted_rand_score(
-                        ml_subtype_full[s][indx_test].ravel(), ml_subtype_test.ravel()
-                    )
+                        ml_subtype_test, _, _, _, _, _, _ = self.subtype_and_stage_individuals(
+                            sustainData_test, samples_sequence, samples_f, N_samples
+                        )
+                        ari_matrix[fold, s] = adjusted_rand_score(
+                            ml_subtype_full[s][indx_test].ravel(), ml_subtype_test.ravel()
+                        )
 
         if not is_full:
             print("Cannot calculate CVIC, loglike_matrix and ARI without all folds. Rerun cross_validate_sustain_model after all folds calculated.")
