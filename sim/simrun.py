@@ -263,14 +263,17 @@ def main():
         #CVIC, loglike_matrix = sustain.cross_validate_sustain_model(test_idxs, [0,5])  #first and sixth
 
         #You can also just run all folds at once
-        CVIC, loglike_matrix   = sustain.cross_validate_sustain_model(test_idxs)
+        CVIC, loglike_matrix, ari_matrix   = sustain.cross_validate_sustain_model(test_idxs)
 
-        if CVIC == [] and loglike_matrix == []:
+        if CVIC == [] and loglike_matrix == [] and ari_matrix == []:
             return
 
         #output CV folds' out-of-sample log likelihoods
         df_loglike              = pd.DataFrame(data = loglike_matrix, columns = ["Subtype " + str(i+1) for i in range(N_S_max)])
         df_loglike.to_csv(os.path.join(output_folder, 'Log_likelihoods_cv_folds.csv'), index=False)
+
+        df_ari                  = pd.DataFrame(data = ari_matrix, columns = ["Subtype " + str(i+1) for i in range(N_S_max)])
+        df_ari.to_csv(os.path.join(output_folder, 'ARI_cv_folds.csv'), index=False)
 
         #this part estimates cross-validated positional variance diagrams
         for i in range(N_S_max):
