@@ -33,6 +33,7 @@ from functools import partial, partialmethod
 
 import time
 import pathos
+from sklearn.metrics import adjusted_rand_score
 
 #*******************************************
 #The data structure class for AbstractSustain. It has no data itself - the implementations of AbstractSustain need to define their own implementations of this class.
@@ -271,6 +272,18 @@ class AbstractSustain(ABC):
         is_full                             = Nfolds == len(test_idxs)
 
         loglike_matrix                      = np.zeros((Nfolds, self.N_S_max))
+        ari_matrix                         = np.full((Nfolds, self.N_S_max), np.nan)
+
+        # Load full-dataset subtype assignments if available for ARI calculation
+        ml_subtype_full = [None] * self.N_S_max
+        for s in range(self.N_S_max):
+            pickle_filename_s = os.path.join(pickle_dir, self.dataset_name + '_subtype' + str(s) + '.pickle')
+            pickle_filepath = Path(pickle_filename_s)
+            if pickle_filepath.exists():
+                with open(pickle_filename_s, 'rb') as pf:
+                    loaded_full = pickle.load(pf)
+                if "ml_subtype" in loaded_full:
+                    ml_subtype_full[s] = np.asarray(loaded_full["ml_subtype"]).reshape(-1)
 
         for fold in tqdm(select_fold, "Folds: ", Nfolds, position=0, leave=True):
 
@@ -354,11 +367,21 @@ class AbstractSustain(ABC):
                 if is_full:
                     loglike_matrix[fold, s]         = np.mean(np.sum(np.log(samples_likelihood_subj_test + 1e-250),axis=0))
 
+                    if ml_subtype_full[s] is not None:
+                        N_samples = 1000
+                        ml_subtype_test, _, _, _, _, _, _ = self.subtype_and_stage_individuals(
+                            sustainData_test, samples_sequence, samples_f, N_samples
+                        )
+                        ari_matrix[fold, s] = adjusted_rand_score(
+                            ml_subtype_full[s][indx_test].ravel(), ml_subtype_test.ravel()
+                        )
+
         if not is_full:
-            print("Cannot calculate CVIC and loglike_matrix without all folds. Rerun cross_validate_sustain_model after all folds calculated.")
-            return [], []
+            print("Cannot calculate CVIC, loglike_matrix and ARI without all folds. Rerun cross_validate_sustain_model after all folds calculated.")
+            return [], [], []
 
         print(f"Average test set log-likelihood for each subtype model: {np.mean(loglike_matrix, 0)}")
+        print(f"Average ARI for each subtype model: {np.nanmean(ari_matrix, 0)}")
 
         if plot:
             import pandas as pd
@@ -396,7 +419,7 @@ class AbstractSustain(ABC):
 
         print("CVIC for each subtype model: " + str(CVIC))
 
-        return CVIC, loglike_matrix
+        return CVIC, loglike_matrix, ari_matrix
 
 
     def combine_cross_validated_sequences(self, N_subtypes, N_folds, plot_format="png", **kwargs):
