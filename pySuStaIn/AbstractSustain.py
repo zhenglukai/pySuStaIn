@@ -173,22 +173,22 @@ class AbstractSustain(ABC):
                 samples_sequence,   \
                 samples_f,          \
                 samples_likelihood          = self._estimate_uncertainty_sustain_model(self.__sustainData, seq_init, f_init)           #self.__estimate_uncertainty_sustain_model(self.__data, seq_init, f_init)
-                ml_sequence_prev_EM         = ml_sequence_EM
-                ml_f_prev_EM                = ml_f_EM
+            ml_sequence_prev_EM         = ml_sequence_EM
+            ml_f_prev_EM                = ml_f_EM
 
-            # max like subtype and stage / subject
-            N_samples                       = 1000
-            ml_subtype,             \
-            prob_ml_subtype,        \
-            ml_stage,               \
-            prob_ml_stage,          \
-            prob_subtype,           \
-            prob_stage,             \
-            prob_subtype_stage               = self.subtype_and_stage_individuals(self.__sustainData, samples_sequence, samples_f, N_samples)   #self.subtype_and_stage_individuals(self.__data, samples_sequence, samples_f, N_samples)
-            if not pickle_filepath.exists():
+        # max like subtype and stage / subject
+        N_samples                       = min(samples_sequence.shape[2], 1000)
+        ml_subtype,             \
+        prob_ml_subtype,        \
+        ml_stage,               \
+        prob_ml_stage,          \
+        prob_subtype,           \
+        prob_stage,             \
+        prob_subtype_stage               = self.subtype_and_stage_individuals(self.__sustainData, samples_sequence, samples_f, N_samples)   #self.subtype_and_stage_individuals(self.__data, samples_sequence, samples_f, N_samples)
+        if not pickle_filepath.exists():
 
-                if not os.path.exists(self.output_folder):
-                    os.makedirs(self.output_folder)
+            if not os.path.exists(self.output_folder):
+                os.makedirs(self.output_folder)
 
                 save_variables                          = {}
                 save_variables["samples_sequence"]      = samples_sequence
@@ -368,7 +368,7 @@ class AbstractSustain(ABC):
                     loglike_matrix[fold, s]         = np.mean(np.sum(np.log(samples_likelihood_subj_test + 1e-250),axis=0))
 
                     if ml_subtype_full[s] is not None:
-                        N_samples = 1000
+                        N_samples = min(samples_sequence.shape[2], 1000)
                         ml_subtype_test, _, _, _, _, _, _ = self.subtype_and_stage_individuals(
                             sustainData_test, samples_sequence, samples_f, N_samples
                         )
@@ -554,6 +554,7 @@ class AbstractSustain(ABC):
         nStages                             = sustainData.getNumStages()    #self.stage_zscore.shape[1]
 
         n_iterations_MCMC                   = samples_sequence.shape[2]
+        N_samples                           = min(n_iterations_MCMC, N_samples)
         select_samples                      = np.round(np.linspace(0, n_iterations_MCMC - 1, N_samples))
         N_S                                 = samples_sequence.shape[0]
         temp_mean_f                         = np.mean(samples_f, axis=1)
